@@ -1,5 +1,5 @@
-from .database import scripts_collection
-from .models import ScriptCreate
+from database import scripts_collection
+from models import ScriptCreate
 from bson import ObjectId
 from typing import Optional
 
