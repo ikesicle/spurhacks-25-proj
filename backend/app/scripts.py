@@ -25,5 +25,7 @@ async def create_script():
     return script_data
 
 @router.delete("/delete_script")
-async def delete_script() 
+async def delete_script(_id: str)
+    if _id in script_data:
+        
     pass
