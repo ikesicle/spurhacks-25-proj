@@ -1,0 +1,37 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite build output
+dist/
+.vite/
+
+# Electron build artifacts (if you package with electron-builder or electron-forge later)
+out/
+build/
+release/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+
+# Env files (if you add secrets)
+.env
+.env.*
+
+# Cache
+.cache/
