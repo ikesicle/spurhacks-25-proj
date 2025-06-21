@@ -48,8 +48,8 @@ def execute_shell_command(command: str):
         result = subprocess.run(
             command, 
             shell=True, 
-            capture_output=True, 
-            text=True, 
+            capture_output=True,
+            text=True,
             check=True
         )
         return {"stdout": result.stdout, "stderr": result.stderr}
@@ -87,14 +87,12 @@ async def generate(request: Prompt):
                 [
                     request.prompt, # original prompt
                     response.candidates[0].content, # model's first response (the function call)
-                    genai.Part(
-                        function_response=genai.protos.FunctionResponse(
-                            name='execute_shell_command',
-                            response={
-                                'content': json.dumps(tool_result),
-                            }
-                        )
-                    ),
+                    # The tool's response
+                    {"role": "tool", 
+                     "parts": [
+                         {"function_response": {"name": "execute_shell_command", "response": tool_result}}
+                        ]
+                    }
                 ]
             )
             return {"response": second_response.text}
