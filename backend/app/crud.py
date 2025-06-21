@@ -15,7 +15,7 @@ async def create_script(
     )
     doc = script.dict()
     result = await scripts_collection.insert_one(doc)
-    return await get_script_by_id(result.inserted_id)
+    return await get_script_by_id(str(result.inserted_id))
 
 async def get_scripts(skip: int = 0, limit: int = 100):
     """Retrieves a list of scripts from the database."""
