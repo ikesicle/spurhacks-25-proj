@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import google.generativeai as genai
 import subprocess
-import json
 import os
 from . import crud, models
 
@@ -16,7 +15,13 @@ async def add_script(script: models.ScriptCreate):
     existing = await crud.get_script_by_name(script.name)
     if existing:
         raise HTTPException(status_code=400, detail="Script with this name exists.")
-    created = await crud.create_script(script)
+    created = await crud.create_script(
+        name=script.name,
+        language=script.language,
+        tags=script.tags or "",
+        description=script.description or "",
+        content=script.content,
+    )
     return created
 
 @app.get("/scripts/", response_model=list[models.ScriptOut])
@@ -60,8 +65,14 @@ def execute_shell_command(command: str):
 
 # Initialize Gemini model
 model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash-exp", 
-    tools=[execute_shell_command]
+    model_name="gemini-pro",
+    tools=[
+        execute_shell_command,
+        crud.create_script,
+        crud.get_scripts,
+        crud.get_script_by_name,
+        crud.search_scripts,
+    ],
 )
 
 @app.post("/generate")
@@ -91,6 +102,36 @@ async def generate(request: Prompt):
                     {"role": "tool", 
                      "parts": [
                          {"function_response": {"name": "execute_shell_command", "response": tool_result}}
+                        ]
+                    }
+                ]
+            )
+            return {"response": second_response.text}
+        
+        # --- Handle Database Tool Calls ---
+        tool_map = {
+            "create_script": crud.create_script,
+            "get_scripts": crud.get_scripts,
+            "get_script_by_name": crud.get_script_by_name,
+            "search_scripts": crud.search_scripts,
+        }
+
+        if function_call.name in tool_map:
+            function_to_call = tool_map[function_call.name]
+            function_args = function_call.args
+            
+            # Call the async CRUD function
+            tool_result = await function_to_call(**function_args)
+            
+            # Send the result back to the model
+            second_response = model.generate_content(
+                [
+                    request.prompt, # original prompt
+                    response.candidates[0].content, # model's first response
+                    # The tool's response
+                    {"role": "tool", 
+                     "parts": [
+                         {"function_response": {"name": function_call.name, "response": {"result": str(tool_result)}}}
                         ]
                     }
                 ]
