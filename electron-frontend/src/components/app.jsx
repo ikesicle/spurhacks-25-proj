@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Title, Body } from './components/title';
+import { Title, Body } from './title';
 
 function App() {
   return(
     <div>
       <Title name="Mo" />
-      <Body />
+      <Body name="body"/>
     </div>
   );
 }
