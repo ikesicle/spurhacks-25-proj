@@ -28,6 +28,26 @@ async def add_script(script: models.ScriptCreate):
 async def list_scripts(skip: int = 0, limit: int = 100):
     return await crud.get_scripts(skip=skip, limit=limit)
 
+@app.put("/scripts/{id}", response_model=models.ScriptOut)
+async def update_script_endpoint(id: str, script: models.ScriptCreate):
+    updated = await crud.update_script(
+        id=id,
+        name=script.name,
+        language=script.language,
+        tags=script.tags,
+        description=script.description,
+        content=script.content,
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Script not found")
+    return updated
+
+@app.delete("/scripts/{id}", response_model=dict)
+async def delete_script_endpoint(id: str):
+    if not await crud.delete_script(id):
+        raise HTTPException(status_code=404, detail="Script not found")
+    return {"message": "Script deleted successfully"}
+
 @app.get("/scripts/search/", response_model=list[models.ScriptOut])
 async def search(query: str):
     return await crud.search_scripts(query)
@@ -72,6 +92,8 @@ model = genai.GenerativeModel(
         crud.get_scripts,
         crud.get_script_by_name,
         crud.search_scripts,
+        crud.update_script,
+        crud.delete_script,
     ],
 )
 
@@ -114,6 +136,8 @@ async def generate(request: Prompt):
             "get_scripts": crud.get_scripts,
             "get_script_by_name": crud.get_script_by_name,
             "search_scripts": crud.search_scripts,
+            "update_script": crud.update_script,
+            "delete_script": crud.delete_script,
         }
 
         if function_call.name in tool_map:
