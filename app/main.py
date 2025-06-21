@@ -60,7 +60,7 @@ def execute_shell_command(command: str):
 
 # Initialize Gemini model
 model = genai.GenerativeModel(
-    model_name="gemini-pro", 
+    model_name="gemini-2.0-flash-exp", 
     tools=[execute_shell_command]
 )
 
