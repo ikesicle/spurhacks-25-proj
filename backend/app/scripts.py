@@ -23,3 +23,7 @@ async def create_script():
     script_data["created_at"] = str(script_data["created_at"])
     script_data["updated_at"] = str(script_data["updated_at"])
     return script_data
+
+@router.delete("/delete_script")
+async def delete_script() 
+    pass
