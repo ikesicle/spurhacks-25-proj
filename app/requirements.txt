@@ -2,4 +2,4 @@ fastapi
 uvicorn
 motor
 pydantic
-google-generativeai
+google-generativeai 
