@@ -1,2 +1,2 @@
-#!/bin/sh
-echo test
+#!/bin/bash
+echo "Testing!"
