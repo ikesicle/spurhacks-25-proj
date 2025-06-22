@@ -35,14 +35,16 @@ Built for SpurHacks 2025: leverages **Electron** for desktop, **React** + **Tail
 
 ---
 
-## 🚦 Key Features
+## 🚀 Features
 
-- Script library: browse, edit, and manage scripts with a rich UI
-- AI chat: interact with Google Gemini for code generation and assistance
-- Cross-platform desktop: Electron packaging with native file access
-- Hot reload for rapid development (via Docker Compose)
-- API/backend and frontend fully containerized for easy deploys
-- Environment-variable driven config with secure API key management
+- 📚 **Script Library:** Organize, tag, and search your scripts in one place  
+- 🤖 **AI-Powered Chat:** Generate, cluster, and automate scripts using natural language  
+- 🗃️ **Script Clustering:** Select and run batches or sequences of scripts with a single click  
+- 🖥️ **Desktop Native:** Electron-powered, cross-platform app  
+- 🏃 **One-Click Execution:** Run scripts with custom parameters and drag-n-drop files  
+- 🧠 **Agentic Automations:** Let Gemini intelligently combine and automate your scripts  
+- ⚡ **Hot Reload:** Rapid development via Docker Compose  
+- 🔐 **Secure:** Environment-based secrets, safe script handling
 
 ---
 
