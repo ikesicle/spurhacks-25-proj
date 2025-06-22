@@ -1,7 +1,8 @@
 from google import genai
 from google.genai.types import Tool, FunctionDeclaration, Content, Part,GenerateContentConfig
 from models import SendMessagePayload
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from bson import ObjectId
 import os
 from pydantic import BaseModel
 import json
@@ -113,11 +114,11 @@ async def send_message(payload: SendMessagePayload) -> dict:
     ]
     
     result = await continue_agent_run({"contents": contents})
-
-    contents = result["contents"]
-    # if (result["next"]):
-    #     entry = await db.sessions.insert_one(contents)
-    #     result["session"] = str(entry.inserted_id)
+    result["contents"] = list(map(lambda x: x.model_dump(), result["contents"]))
+    
+    if (result["next"]):
+        entry = await db.sessions.insert_one(dict(result))
+        result["session"] = str(entry.inserted_id)
     return result
 
 
@@ -171,4 +172,19 @@ async def continue_agent_run(contents) -> dict:
 
 @router.post("/continue_session")
 async def continue_session(payload: SendMessagePayload) -> dict:
-    message = payload.message
+    session_id = payload.message
+    session = await db.scripts.find_one({"_id": ObjectId(session_id)})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    output = []
+    for k in session["contents"]:
+        output.append(Content.model_validate(k))
+    await db.scripts.delete_one({"_id": session_id})
+    result = await continue_agent_run({"contents": output})
+    result["contents"] = list(map(lambda x: x.model_dump(), result["contents"]))
+    
+    if (result["next"]):
+        entry = await db.sessions.insert_one(dict(result))
+        result["session"] = str(entry.inserted_id)
+    return result
+    
