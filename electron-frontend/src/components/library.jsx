@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ScriptView from './scriptview';
 
-<<<<<<< HEAD
 const Library = ({ setWindow, setCurrentScript, allScripts, setAllScripts }) => {
     const [counter, setCounter] = useState(0);
-=======
-const Library = ({ setWindow, setCurrentScript }) => {
-    const [counter, setCounter] = useState(0);
-    const [scripts, setScripts] = useState([]);
->>>>>>> bc6a074 (rebase)
 
     useEffect(() => {
         (async () => {
