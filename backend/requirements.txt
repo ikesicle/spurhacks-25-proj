@@ -3,3 +3,4 @@ motor
 pydantic
 python-dotenv
 google-generativeai
+uvicorn[standard]
