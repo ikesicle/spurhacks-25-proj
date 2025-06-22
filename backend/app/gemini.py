@@ -169,6 +169,7 @@ async def continue_agent_run(contents) -> dict:
             ret["should_continue"] = True
             # Return the function call data
     ret["response"] = response.text
+
     contents["next"] = ret
 
     return contents
