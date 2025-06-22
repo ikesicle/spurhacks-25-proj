@@ -34,6 +34,7 @@ def execute_script(cmd_path: str, args: list[str] | None = None) -> dict:
     Executes a shell command or script and returns a dictionary containing
     the standard output, standard error, and the exit status code.
     """
+    print("Running :\n", cmd_path, args)
     if args is None:
         args = []
     print(f"Executing: {cmd_path} with args: {args}")
@@ -174,6 +175,7 @@ async def send_message(payload: SendMessagePayload) -> dict:
 
 
 async def continue_agent_run(contents) -> dict:
+    print("Contents:\n", contents)
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=contents["contents"],
@@ -215,7 +217,7 @@ async def continue_agent_run(contents) -> dict:
             # args is optional, so we use .get() to avoid errors if it's not provided
             args = list(function_call.args.get("args", []))
             # Reconstruct args from sanitized variables to avoid JSON serialization errors.
-            ret["content"] = {"cmd_path": cmd_path, "args": args}
+            ret["content"] = {"cmd_path": cmd_path, "args": args, "return": execute_script(cmd_path=cmd_path, args=args)}
             # Return the function call data
         elif function_call.name == "create_new_script":
             ret["type"] = "create_new_script"
@@ -228,6 +230,7 @@ async def continue_agent_run(contents) -> dict:
 
     contents["next"] = ret
 
+    print("Return: \n", contents)
     return contents
 
 @router.post("/continue_session")
