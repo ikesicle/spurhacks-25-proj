@@ -1,101 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import TextareaAutosize from 'react-textarea-autosize';
 import HistoryTab from './HistoryTab';
 
-const Chat = ({ setWindow, allScripts }) => {
-  const [input, setInput] = useState('');
-  const [response, setResponse] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
+const Chat = ({ setWindow }) => {
+    const [history, setHistory] = useState([]);
+    const [message, setMessage] = useState('');
+    const [isThinking, setIsThinking] = useState(false);
+    const messagesEndRef = useRef(null);
 
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setInput(value);
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
 
-    // Weak search when input starts with "/"
-    if (value.startsWith('/')) {
-      const query = value.slice(1).toLowerCase();
-      if (query.length > 0) {
-        const results = allScripts.filter(script =>
-          script.name.toLowerCase().includes(query)
-        );
-        setSearchResults(results);
-      } else {
-        setSearchResults([]);
-      }
-    } else {
-      setSearchResults([]);
-    }
-  };
+    useEffect(scrollToBottom, [history]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    setLoading(true);
-    setTimeout(() => {
-      setResponse((prev) => prev + '\n' + input);
-      setLoading(false);
-    }, 800);
-    setInput('');
-    setSearchResults([]);
-  };
+    const handleSendMessage = async () => {
+        if (!message.trim()) return;
 
-  return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      <div className="flex flex-1 w-full justify-center items-start">
-        <div className={`flex flex-col items-center flex-1 transition-all duration-300 relative ${showHistory ? 'ml-0' : ''}`}> 
-          <div className="w-3/5 max-w-xl relative">
-            <button
-              className="absolute right-4 top-0 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition z-30"
-              onClick={() => setShowHistory((prev) => !prev)}>
-              {showHistory ? 'Close History' : 'Open History'}
-            </button>
-            <div className="w-full h-15 flex flex-1 justify-center mb-6 mt-12">
-                <button
-                    className="w-20 h-full bg-blue-500 text-white justify-center hover:bg-blue-600 cursor-pointer"
-                    onClick={(e) => setWindow('library')}>
-                    LIB
-                </button>
-                <form onSubmit={handleSend} className="flex-1 h-full relative">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={handleInputChange}
-                        placeholder="Type your message..."
-                        className="w-full pl-5 h-full border border-gray-300 text-lg outline-none shadow-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-200"
-                        disabled={loading}
-                    />
-                    {/* Search results dropdown */}
-                    {searchResults.length > 0 && (
-                      <div className="absolute left-0 right-0 top-full bg-white border border-gray-200 shadow-lg z-20 max-h-48 overflow-y-auto">
-                        {searchResults.map((script, idx) => (
-                          <div key={idx} className="px-4 py-2 hover:bg-blue-100 cursor-pointer">
-                            {script.name}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                </form>
-            </div>
-            <div
-              className="min-h-[200px] max-h-[400px] overflow-y-auto p-6 flex flex-col gap-4"
-            >
-              {response}
-              {loading && (
-                <div className="text-gray-400 italic">AI is typing...</div>
-              )}
-            </div>
-          </div>
-        </div>
-        {
-          <div className="mr-0 mt-0 h-full w-72 transition flex-shrink-0 flex-grow-0" style={ showHistory ? {} : {width: '0px' }}>
-            <HistoryTab show={showHistory} onClose={() => setHistory([])} history={history} />
-          </div>
+        const newMessage = { type: 'user', content: message };
+        setHistory(prev => [...prev, newMessage]);
+        setMessage('');
+        setIsThinking(true);
+
+        try {
+            const response = await fetch("http://localhost:8000/gemini/send_message", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+            const data = await response.json();
+
+            let botResponse = "Sorry, I couldn't process that.";
+            if (data.function_called) {
+                botResponse = `Function Call: ${data.function_called}\nArgs: ${JSON.stringify(data.function_args, null, 2)}\nResult: ${JSON.stringify(data.function_result, null, 2)}`;
+            } else if (data.response) {
+                botResponse = data.response;
+            }
+
+            setHistory(prev => [...prev, { type: 'bot', content: botResponse }]);
+        } catch (error) {
+            console.error("Failed to send message:", error);
+            setHistory(prev => [...prev, { type: 'bot', content: "An error occurred while connecting to the server." }]);
+        } finally {
+            setIsThinking(false);
         }
-      </div>
-    </div>
-  );
+    };
+
+    return (
+        <div className="h-full w-full flex p-8 gap-8">
+            <div className="flex-1 flex flex-col bg-gray-900/50 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl p-6">
+                <div className="flex-1 overflow-y-auto pr-4 space-y-4">
+                    {history.map((item, idx) => (
+                        <div key={idx} className={`flex ${item.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-xl px-5 py-3 rounded-2xl shadow-md ${item.type === 'user' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-300'}`}>
+                                <pre className="whitespace-pre-wrap font-sans">{item.content}</pre>
+                            </div>
+                        </div>
+                    ))}
+                    {isThinking && (
+                        <div className="flex justify-start">
+                            <div className="px-5 py-3 rounded-2xl shadow-md bg-gray-800 text-gray-400">
+                                Thinking...
+                            </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
+                <div className="mt-6 flex items-center gap-4">
+                    <TextareaAutosize
+                        maxRows={5}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (handleSendMessage(), e.preventDefault())}
+                        placeholder="Type your message..."
+                        className="flex-1 p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner transition-colors"
+                    />
+                    <button
+                        onClick={handleSendMessage}
+                        disabled={isThinking}
+                        className="font-bold py-3 px-6 text-white rounded-lg shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:scale-100"
+                    >
+                        Send
+                    </button>
+                    <button
+                        onClick={() => setWindow('library')}
+                        className="font-bold py-3 px-6 text-white rounded-lg shadow-lg bg-gray-600 hover:bg-gray-500 transform hover:scale-105 transition-all duration-200"
+                    >
+                        Library
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default Chat;

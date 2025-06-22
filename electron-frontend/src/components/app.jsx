@@ -9,7 +9,7 @@ const App = () => {
   const [currentScript, setCurrentScript] = React.useState(null);
   const [allScripts, setAllScripts] = React.useState([]);
   return(
-    <div>
+    <div className="h-screen w-screen bg-gradient-to-br from-gray-900 to-black text-gray-300 font-sans">
       {(() => {
         switch (window) {
           case 'chat':

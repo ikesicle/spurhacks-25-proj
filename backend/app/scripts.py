@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Body, Depends, HTTPException 
+from typing import List
 from database import get_database
 from datetime import datetime
 from models import Script
 from bson import ObjectId
 import asyncio
+from gemini import execute_script
 
 router = APIRouter(prefix="/scripts", tags=["scripts"])
 db = get_database()
@@ -162,3 +164,14 @@ async def execute_script_as_tool(script_id: str):
         "stdout": stdout.decode(),
         "stderr": stderr.decode()
     }
+
+@router.post("/run_script")
+async def run_script(script_id: str = Body(...), args: List[str] = Body(...)):
+    print(f"Running script with ID '{script_id}' and args '{args}'")
+    script_doc = await db.scripts.find_one({"_id": ObjectId(script_id)})
+    if not script_doc:
+        raise HTTPException(status_code=404, detail=f"Script with ID '{script_id}' not found.")
+    
+    path = script_doc["path"]
+    return execute_script(path, args)
+

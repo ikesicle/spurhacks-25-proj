@@ -45,17 +45,19 @@ def execute_script(script_path: str, args: list[str] | None = None) -> dict:
             "returncode": result.returncode,
         }
     except FileNotFoundError:
-        return {
+        error = {
             "stdout": "",
             "stderr": f"Error: The command '{script_path}' was not found.",
             "returncode": 127,  # Standard exit code for command not found
         }
+        return error
     except Exception as e:
-        return {
+        error = {
             "stdout": "",
-            "stderr": f"An unexpected Python error occurred: {str(e)}",
+            "stderr": f"An unexpected error occurred: {str(e)}, make sure to add \'#!/bin/bash\' if its a bash script and make sure you have the execute permission permissions.",
             "returncode": 1,
         }
+        return error
 
 get_script_names_function = FunctionDeclaration(
     name="get_script_names",

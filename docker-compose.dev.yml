@@ -13,7 +13,6 @@ services:
       - mongo
     volumes:
       - ./backend/app:/app
-      - ./test_scripts:/test_scripts
     networks:
       - app-network
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
