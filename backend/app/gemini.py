@@ -116,7 +116,7 @@ async def send_message(payload: SendMessagePayload) -> dict:
     result = await continue_agent_run({"contents": contents})
     result["contents"] = list(map(lambda x: x.model_dump(), result["contents"]))
     
-    if (result["next"]):
+    if (result["next"]["should_continue"]):
         entry = await db.sessions.insert_one(dict(result))
         result["session"] = str(entry.inserted_id)
     return result
@@ -128,7 +128,11 @@ async def continue_agent_run(contents) -> dict:
         contents=contents["contents"],
         config=config
     )
-    ret = {}
+    ret = {
+        "should_continue": False,
+        "function_called": "",
+        "response": ""
+    }
     # The response can contain either a function call or text. 
     # We must check for the function call first, because accessing .text 
     # on a response with a function call will raise an error.
@@ -137,14 +141,14 @@ async def continue_agent_run(contents) -> dict:
 
     if hasattr(part, "function_call") and part.function_call:
         function_call = part.function_call
-        
+        contents["contents"].append(response.candidates[0].content)
         if function_call.name == "get_script_names":
             result = await get_script_names()
             function_response_part = Part.from_function_response(
                 name=function_call.name,
                 response={"result": f"The script names are: {result}"},
             )
-            contents["contents"].append(response.candidates[0].content)
+            
             contents["contents"].append(Content(role="user", parts=[function_response_part])) # Append the function response
             return await continue_agent_run(contents)
         elif function_call.name == "get_script_details":
@@ -153,7 +157,6 @@ async def continue_agent_run(contents) -> dict:
                 name=function_call.name,
                 response={"result": f"Details of the script:\n {result}"},
             )
-            contents["contents"].append(response.candidates[0].content)
             contents["contents"].append(Content(role="user", parts=[function_response_part])) # Append the function response
             return await continue_agent_run(contents)
         elif function_call.name == "execute_script":
@@ -163,6 +166,7 @@ async def continue_agent_run(contents) -> dict:
             ret["function_called"] = function_call.name
             # Reconstruct args from sanitized variables to avoid JSON serialization errors.
             ret["function_args"] = {"script_path": script_path, "args": args}
+            ret["should_continue"] = True
             # Return the function call data
     ret["response"] = response.text
 
@@ -173,17 +177,25 @@ async def continue_agent_run(contents) -> dict:
 @router.post("/continue_session")
 async def continue_session(payload: SendMessagePayload) -> dict:
     session_id = payload.message
-    session = await db.scripts.find_one({"_id": ObjectId(session_id)})
+    session = await db.sessions.find_one({"_id": ObjectId(session_id)})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    print(session["next"])
     output = []
     for k in session["contents"]:
         output.append(Content.model_validate(k))
-    await db.scripts.delete_one({"_id": session_id})
+    
+    function_response_part = Part.from_function_response(
+        name=session["next"]["function_called"],
+        response={"result": execute_script(session["next"]["function_args"]["script_path"], session["next"]["function_args"]["args"])},
+    )
+    output.append(function_response_part)
+    await db.sessions.delete_one({"_id": session_id})
     result = await continue_agent_run({"contents": output})
+    
     result["contents"] = list(map(lambda x: x.model_dump(), result["contents"]))
     
-    if (result["next"]):
+    if (result["next"]["should_continue"]):
         entry = await db.sessions.insert_one(dict(result))
         result["session"] = str(entry.inserted_id)
     return result
