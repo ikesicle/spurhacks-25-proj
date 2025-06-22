@@ -1,12 +1,26 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Title, Body } from './title';
+import Chat from './chat';
+import Library from './library'; // Placeholder for library component
+import Edit from './edit'; // Placeholder for edit component
 
-function App() {
+const App = () => {
+  const [window, setWindow] = React.useState('chat');
+  const [currentScript, setCurrentScript] = React.useState(null);
   return(
     <div>
-      <Title name="Mo" />
-      <Body name="body"/>
+      {(() => {
+        switch (window) {
+          case 'chat':
+            return <Chat setWindow={setWindow} />;
+          case 'library':
+            return <Library setWindow={setWindow} setCurrentScript={setCurrentScript} />; // Placeholder for library component
+          case 'edit':
+            return <Edit setWindow={setWindow} currentScript={currentScript} updateScript={setCurrentScript}/>;
+          default:
+            return <Chat setWindow={setWindow} />;
+        }
+      })()}
     </div>
   );
 }
