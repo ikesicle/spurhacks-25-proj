@@ -140,4 +140,3 @@ async def send_message(payload: SendMessagePayload) -> dict:
 
     print("The return is: \n", json.dumps(ret, indent=4))
     return ret
-    
