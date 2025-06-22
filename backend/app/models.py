@@ -22,6 +22,5 @@ class Script(BaseModel):
         # allow extra fields
         extra = "allow"
  
- 
 class SendMessagePayload(BaseModel):
     message: str

@@ -2,5 +2,5 @@ fastapi
 motor
 pydantic
 python-dotenv
-google-generativeai
+google-genai
 uvicorn[standard]
