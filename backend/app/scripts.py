@@ -52,4 +52,13 @@ async def update_script(script_data: dict = Body(...)):
 
 @router.delete("/delete_script")
 async def delete_script(_id: str):
-    pass
+    # Convert string _id to ObjectId
+    try:
+        obj_id = ObjectId(_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid script ID format") from e
+    script = await db.scripts.find_one({"_id": obj_id})
+    if not script:
+        raise HTTPException(status_code=404, detail="Script not found")
+    await db.scripts.delete_one({"_id": obj_id})
+    return {"message": "Script deleted successfully"}
