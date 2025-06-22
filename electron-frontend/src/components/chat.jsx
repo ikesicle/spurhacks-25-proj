@@ -49,7 +49,10 @@ const Chat = ({ setWindow }) => {
                 botResponse.content = `Function Call: ${data.function_called}\nArgs: ${JSON.stringify(data.function_args, null, 2)}\nResult: ${JSON.stringify(data.function_result, null, 2)}`;
             } else if (data.next?.content?.return) {
                 const { returncode, stdout, stderr } = data.next.content.return;
-                let resultText = `Execution Finished with Exit Code: ${returncode}`;
+                const { cmd_path, args } = data.next.content;
+                
+                let resultText = `Executed: '${cmd_path} ${args.join(" ")}'\n\nExecution Finished with Exit Code: ${returncode}`;
+
                 if (stdout) {
                     resultText += `\n\nSTDOUT:\n${stdout}`;
                 }
