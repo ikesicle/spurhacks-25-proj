@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const ScriptView = ({visible, scriptData, activateEdit}) => {
+const ScriptView = ({visible, scriptData, activateEdit, updateScript}) => {
     const [expanded, setExpanded] = useState(false);
     const [parameters, setParameters] = useState({});
     return (
@@ -39,7 +39,15 @@ const ScriptView = ({visible, scriptData, activateEdit}) => {
                     </button>
                     <button
                         className='h-10 w-20 bg-red-500 text-white rounded hover:bg-red-600 transition mr-2'
-                        onClick={() => alert(`Deleting script: ${scriptData.name}`)}>
+                        onClick={() => {
+                            fetch(`http://localhost:8000/scripts/delete_script?_id=${scriptData._id}`,
+                                {
+                                    method: "DELETE"
+                                }
+                            )
+                            console.log("Deleted.")
+                            updateScript()
+                        }}>
                         Delete
                     </button>
                     <button

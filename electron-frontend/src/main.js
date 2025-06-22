@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
@@ -21,6 +22,7 @@ function createWindow() {
   if (process.env.NODE_ENV === 'development') {
     win.loadURL('http://localhost:3000');
     win.webContents.openDevTools();
+    console.log(process.sandboxed);
   } else {
     // In production, load built React index.html
     win.loadFile('dist/renderer/index.html');

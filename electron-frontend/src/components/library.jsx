@@ -2,17 +2,8 @@ import React, { useState, useEffect } from 'react';
 import ScriptView from './scriptview';
 
 const Library = ({ setWindow, setCurrentScript }) => {
-    const [scripts, setScripts] = useState([{
-        name: 'Goon',
-        id: '32039bca-4c1b-4f8a-9d2e-3f5b6c7d8e9f',
-        description: 'Goon is a powerful script designed to enhance your gaming experience with advanced features and functionalities.',
-        parameters: [
-            { name: 'speed', type: 'int', description: 'Adjusts the speed of the script.' },
-            { name: 'aura', type: 'str', description: 'Adjusts the aura of the script.' },
-            { name: 'scroll', type: 'file', description: 'Adjusts the aura of the script.' },
-            { name: 'source', type: 'dir', description: 'Adjusts the aura of the script.' }
-        ]
-    }]);
+    const [counter, setCounter] = useState(0);
+    const [scripts, setScripts] = useState([]);
 
     useEffect(() => {
         (async () => {
@@ -45,7 +36,7 @@ const Library = ({ setWindow, setCurrentScript }) => {
                                     <ScriptView scriptData={script} activateEdit={()=>{
                                         setCurrentScript(script);
                                         setWindow('edit');
-                                    }} />
+                                    }} updateScript={()=>{setCounter(counter + 1)}} />
                                 ))}
                             </ul>
                         )}

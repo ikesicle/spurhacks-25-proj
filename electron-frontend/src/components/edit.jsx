@@ -1,6 +1,18 @@
-import React, { useState } from 'react';
+import { data } from 'autoprefixer';
+import React, { useState, useEffect, useRef } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 const Edit = ({ setWindow, currentScript, updateScript }) => {
+
+    useEffect(() => {
+        if (window.electronAPI) {
+            window.electronAPI.onDragOver();
+            window.electronAPI.onDrop((data) => {
+                updateScript({...currentScript, path: data[0].path})
+            });
+        }
+
+    }, []);
+
     return (
         <form className="h-screen w-screen p-5 flex-col flex">
             <div className="flex-1 w-full flex flex-row">
@@ -32,6 +44,17 @@ const Edit = ({ setWindow, currentScript, updateScript }) => {
                             value={currentScript ? currentScript.description : 'N/A'}
                             onChange={(e) => updateScript({ ...currentScript, description: e.target.value })}
                             placeholder="Script Description"
+                            className="w-full mb-4 p-2 border border-gray-300 rounded shadow" />
+                    </div>
+                    <div className="mb-4">
+                        <div className=''>
+                            Script Path
+                        </div>
+                        <TextareaAutosize
+                            type="text"
+                            value={currentScript ? currentScript.path : 'N/A'}
+                            onChange={(e) => updateScript({ ...currentScript, path: e.target.value })}
+                            placeholder="Script Path"
                             className="w-full mb-4 p-2 border border-gray-300 rounded shadow" />
                     </div>
                     <div className="mb-4">
@@ -71,6 +94,16 @@ const Edit = ({ setWindow, currentScript, updateScript }) => {
                                         }}
                                         placeholder={`Parameter Type`}
                                         className="flex-1 p-2 border border-gray-300 rounded shadow" />
+                                    <TextareaAutosize
+                                        type="text"
+                                        value={param.description}
+                                        onChange={(e) => {
+                                            const updatedParams = [...currentScript.parameters];
+                                            updatedParams[idx].description = e.target.value;
+                                            updateScript({ ...currentScript, parameters: updatedParams });
+                                        }}
+                                        placeholder={`Parameter Description`}
+                                        className="flex-1 p-2 border border-gray-300 rounded shadow" />
                                     <button
                                         type="button"
                                         className=" px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
@@ -87,25 +120,20 @@ const Edit = ({ setWindow, currentScript, updateScript }) => {
 
 
                 </div>
-                <div className=" w-1/2 ml-5">
-                    <h2 className="text-lg font-semibold mb-4">
-                        Script Code
-                    </h2>
-                    <TextareaAutosize
-                        value={currentScript ? currentScript.code : ''}
-                        onChange={(e) => {
-                            updateScript({ ...currentScript, code: e.target.value });
-                        }}
-                        placeholder="Write your script code here..."
-                        className="w-full h-96 p-2 border border-gray-300 rounded shadow"
-                    />
-                </div>
             </div>
             <button
                 type="button"
                 className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
                 onClick={() => {
-                    // TODO: Implement save functionality
+                    (async () => {
+                        fetch("http://localhost:8000/scripts/save_script", {
+                            method: "POST",
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(currentScript)
+                        })
+                    })()
                 }}>
                 Save Changes
             </button>
