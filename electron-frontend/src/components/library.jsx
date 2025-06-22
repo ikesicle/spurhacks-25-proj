@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ScriptView from './scriptview';
+
 const Library = ({ setWindow, setCurrentScript }) => {
     const [scripts, setScripts] = useState([{
         name: 'Goon',
@@ -12,6 +13,18 @@ const Library = ({ setWindow, setCurrentScript }) => {
             { name: 'source', type: 'dir', description: 'Adjusts the aura of the script.' }
         ]
     }]);
+
+    useEffect(() => {
+        (async () => {
+            var response = await fetch('http://localhost:8000/scripts/get_scripts', {
+                method: 'GET'});
+            if (response.ok) {
+                var data = await response.json();
+                console.log(data);
+                setScripts(data);
+            }
+
+        })()}, []);
 
     return (
         <div className="flex flex-col h-screen bg-gray-100">

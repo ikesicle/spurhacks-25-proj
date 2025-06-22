@@ -63,7 +63,7 @@ const Chat = ({ setWindow }) => {
         </div>
         {
           <div className="mr-0 mt-0 h-full w-72 transition flex-shrink-0 flex-grow-0" style={ showHistory ? {} : {width: '0px' }}>
-            <HistoryTab show={showHistory} onClose={() => setShowHistory(false)} history={history} />
+            <HistoryTab show={showHistory} onClose={() => setHistory([])} history={history} />
           </div>
         }
       </div>
