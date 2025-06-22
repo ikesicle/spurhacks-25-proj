@@ -147,21 +147,6 @@ docker-compose exec frontend sh   # Shell into frontend container
 
 ---
 
-## 📣 Contributing
-
-1. Fork and clone this repo
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit changes and push (`git commit -m '...'`)
-4. Open a pull request
-
----
-
-## 📄 License
-
-MIT License. See [`LICENSE`](LICENSE) for details.
-
----
-
 ## 🙇 Acknowledgements
 
 - [SpurHacks 2025](https://spurhacks.com/)
