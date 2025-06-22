@@ -1,5 +1,10 @@
 # SpurHacks 2025 Project
 
+<h1 align="center">
+  <b>Spellbook</b> <br>
+  <span style="font-size:1.2em;">Your AI-Powered Script Library & Automation Hub</span>
+</h1>
+
 <p align="center">
   <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80" alt="SpurHacks Banner" width="80%" />
 </p>
@@ -12,11 +17,6 @@
   <img alt="Electron" src="https://img.shields.io/badge/platform-Electron-47848F?logo=electron">
   <img alt="Tailwind" src="https://img.shields.io/badge/ui-Tailwind_CSS-38B2AC?logo=tailwindcss">
 </div>
-
-<h1 align="center">
-  <b>Spellbook</b> <br>
-  <span style="font-size:1.2em;">Your AI-Powered Script Library & Automation Hub</span>
-</h1>
 
 ---
 
