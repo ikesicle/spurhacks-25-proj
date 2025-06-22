@@ -92,6 +92,7 @@ async def get_script_details(identifier: str):
     #   "path": "/scripts/backup.sh" } 
     #   "description: description stuff"
     # }
+
 @router.post("/execute_script/{script_id}")
 async def execute_script_as_tool(script_id: str):
     print(f"TOOL CALL RECEIVED: Execute script with identifier '{script_id}'")
@@ -143,7 +144,12 @@ async def execute_script_as_tool(script_id: str):
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported script type: Path must end in .py or .sh. Path was: {server_script_path}")
 
-        stdout, stderr = await proc.communicate()
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60 )
+        except asyncio.TimeoutError:
+            proc.kill()  # Kill the runaway process
+            await proc.wait()
+            raise HTTPException(status_code=408, detail="Script execution timed out")
 
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail=f"Server Execution Error: The script file was not found at the path: {server_script_path}")
