@@ -20,6 +20,12 @@
 A cross-platform desktop app for managing, editing, and running scripts with AI-powered chat and code generation.  
 Built for SpurHacks 2025: leverages **Electron** for desktop, **React** + **Tailwind CSS** for UI, a **FastAPI** backend, and **MongoDB** for persistent storage. Integrates with **Google Gemini** for generative AI features.
 
+## 💡 Why Spellbook?
+
+- **Cluster scripts with ease:** Select, group, and run multiple scripts in a sequence or batch. No more manual copy-paste or script juggling—Spellbook lets you automate entire workflows using your existing utilities.
+- **AI-driven automation:** Use natural language to describe what you want to automate, and let Gemini suggest, combine, or even generate scripts for you.
+- **Accessible & organized:** Your scripts are always at your fingertips—tag, search, and manage them with a sleek visual interface.
+
 ---
 
 ## 🏗️ Architecture & Stack
