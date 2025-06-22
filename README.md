@@ -8,10 +8,6 @@
   <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80" alt="Project Banner" width="80%" />
 </p>
 
-<p align="center">
-  <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80" alt="SpurHacks Banner" width="80%" />
-</p>
-
 <div align="center">
   <img alt="Docker" src="https://img.shields.io/badge/containerized-Docker-blue?logo=docker">
   <img alt="FastAPI" src="https://img.shields.io/badge/backend-FastAPI-009688?logo=fastapi">
