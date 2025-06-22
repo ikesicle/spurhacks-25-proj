@@ -115,9 +115,9 @@ async def send_message(payload: SendMessagePayload) -> dict:
     result = await continue_agent_run({"contents": contents})
 
     contents = result["contents"]
-    if (result["next"]):
-        entry = await db.sessions.insert_one(contents)
-        result["session"] = str(entry.inserted_id)
+    # if (result["next"]):
+    #     entry = await db.sessions.insert_one(contents)
+    #     result["session"] = str(entry.inserted_id)
     return result
 
 
@@ -163,10 +163,10 @@ async def continue_agent_run(contents) -> dict:
             # Reconstruct args from sanitized variables to avoid JSON serialization errors.
             ret["function_args"] = {"script_path": script_path, "args": args}
             # Return the function call data
-    # ret["response"] = response.text
+    ret["response"] = response.text
 
     contents["next"] = ret
-    
+
     return contents
 
 @router.post("/continue_session")
