@@ -6,6 +6,7 @@ Thumbs.db
 __pycache__/**/*
 __pycache__/*
 backend/test_scripts
+backend/app/local_scripts
 
 lib/
 .env*
