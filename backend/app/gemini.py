@@ -238,13 +238,16 @@ async def continue_session(payload: UserResponse) -> dict:
     session = await db.sessions.find_one({"_id": ObjectId(session_id)})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    
+    print("The session is: \n", session)
 
     output = [Content.model_validate(c) for c in session.get("contents", [])]
     function_response_part = None
     next_action = session.get("next", {})
     action_type = next_action.get("type")
+    print("The action type is: \n", action_type)
 
-    if action_type == "execute_script":
+    if action_type == "execute_script" or action_type == "confirmation_required":
         if response.lower() == "yes":
             content = next_action.get("content", {})
             cmd_path = content.get("cmd_path")
