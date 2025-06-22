@@ -15,10 +15,12 @@
 
 ---
 
-## 🧑‍💻 Project Purpose
+## ✨ Overview
 
-A cross-platform desktop app for managing, editing, and running scripts with AI-powered chat and code generation.  
-Built for SpurHacks 2025: leverages **Electron** for desktop, **React** + **Tailwind CSS** for UI, a **FastAPI** backend, and **MongoDB** for persistent storage. Integrates with **Google Gemini** for generative AI features.
+**Spellbook** is a powerful, cross-platform desktop application for clustering, automating, and managing all your utility scripts—supercharged with AI.  
+Easily organize and execute a variety of scripts in seamless clusters, automate complex workflows with a single click, and use natural language to create new automations with Google Gemini.
+
+---
 
 ## 💡 Why Spellbook?
 
