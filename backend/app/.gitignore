@@ -2,3 +2,7 @@
 __pycache__/**/*
 __pycache__/*
 lib/
+.env*
+.env
+.venv/
+.venv/*
