@@ -1,6 +1,6 @@
 from google import genai
 from google.genai.types import Tool, FunctionDeclaration, Content, Part,GenerateContentConfig
-from models import SendMessagePayload
+from models import SendMessagePayload, UserResponse
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
 import os
@@ -26,17 +26,17 @@ async def get_script_details(script_name: str) -> list[dict]:
         script["_id"] = str(script["_id"])
     return scripts
 
-def execute_script(script_path: str, args: list[str] | None = None) -> dict:
+def execute_script(cmd_path: str, args: list[str] | None = None) -> dict:
     """
     Executes a shell command or script and returns a dictionary containing
     the standard output, standard error, and the exit status code.
     """
     if args is None:
         args = []
-    print(f"Executing: {script_path} with args: {args}")
+    print(f"Executing: {cmd_path} with args: {args}")
     try:
-        command = [script_path] + args
-        if (script_path.endswith('.py')): command = ['python'] + command
+        command = [cmd_path] + args
+        if (cmd_path.endswith('.py')): command = ['python'] + command
         result = subprocess.run(
             command, capture_output=True, text=True
         )
@@ -48,7 +48,7 @@ def execute_script(script_path: str, args: list[str] | None = None) -> dict:
     except FileNotFoundError:
         return {
             "stdout": "",
-            "stderr": f"Error: The command '{script_path}' was not found.",
+            "stderr": f"Error: The command '{cmd_path}' was not found.",
             "returncode": 127,  # Standard exit code for command not found
         }
     except Exception as e:
@@ -100,7 +100,7 @@ get_script_details_function = FunctionDeclaration(
 
 ask_function = FunctionDeclaration(
     name="ask",
-    description="Asks the user a question. Use this if some things about your task are unclear, such as directories or files to execute scripts in/on. Don't use it too often.",
+    description="Asks the user a question. Use this if some things about your task are unclear, such as directories or files to execute scripts in/on. If you wish for the user to provide a response, call this function; if you don't call any tools, the conversation will end.",
     parameters={
         "type": "object",
         "properties": {
@@ -132,7 +132,7 @@ execute_script_function = FunctionDeclaration(
                 }
             }
         },
-        "required": ["script_path"]
+        "required": ["cmd_path"]
     }
 )
 
@@ -196,11 +196,11 @@ async def continue_agent_run(contents) -> dict:
             return await continue_agent_run(contents)
         elif function_call.name == "execute_script":
             ret["type"] = "execute_script"
-            script_path = function_call.args["script_path"]
+            cmd_path = function_call.args["cmd_path"]
             # args is optional, so we use .get() to avoid errors if it's not provided
             args = list(function_call.args.get("args", []))
             # Reconstruct args from sanitized variables to avoid JSON serialization errors.
-            ret["content"] = {"script_path": script_path, "args": args}
+            ret["content"] = {"cmd_path": cmd_path, "args": args}
             # Return the function call data
         elif function_call.name == "create_new_script":
             ret["type"] = "create_new_script"
@@ -216,8 +216,9 @@ async def continue_agent_run(contents) -> dict:
     return contents
 
 @router.post("/continue_session")
-async def continue_session(payload: SendMessagePayload) -> dict:
-    session_id = payload.message
+async def continue_session(payload: UserResponse) -> dict:
+    session_id = payload.session
+    response = payload.response
     session = await db.sessions.find_one({"_id": ObjectId(session_id)})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -237,15 +238,15 @@ async def continue_session(payload: SendMessagePayload) -> dict:
         
     elif (session["next"]["type"] == "execute_script"):
         function_response_part = Part.from_function_response(
-            name=session["next"]['content']["script_path"],
-            response={"result": execute_script(session["next"]['content']["script_path"], session["next"]['content']["args"])["stdout"]},
+            name=session["next"]['content']["cmd_path"],
+            response={"result": execute_script(session["next"]['content']["cmd_path"], session["next"]['content']["args"])["stdout"]},
         )
-        session["called"].append(" ".join([session["next"]['content']["script_path"]] + session["next"]['content']["args"]))
+        session["called"].append(" ".join([session["next"]['content']["cmd_path"]] + session["next"]['content']["args"]))
     
-    elif (session["next"]["type"] == "execute_script"):
+    elif (session["next"]["type"] == "ask"):
         function_response_part = Part.from_function_response(
             name="ask",
-            response={"result": session["next"]["content"]["prompt"]},
+            response={"result": response},
         )
     output.append(Content(role="user", parts=[function_response_part]))
     await db.sessions.delete_one({"_id": session_id})

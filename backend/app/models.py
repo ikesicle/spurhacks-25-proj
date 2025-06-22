@@ -24,3 +24,7 @@ class Script(BaseModel):
  
 class SendMessagePayload(BaseModel):
     message: str
+
+class UserResponse(BaseModel):
+    session: str
+    response: str
