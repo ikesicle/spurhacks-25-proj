@@ -15,6 +15,9 @@ client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 router = APIRouter(prefix="/gemini", tags=["gemini"])
 db = get_database()
 
+# A simple (and non-exhaustive) list of commands that are generally safe
+SAFE_COMMANDS = {"ls", "echo", "pwd", "whoami", "date", "cat"}
+
 async def get_script_names() -> list[str]:
     scripts = await db.scripts.find().to_list(length=None)
     scripts_names = [script["name"] for script in scripts]
@@ -150,9 +153,21 @@ async def send_message(payload: SendMessagePayload) -> dict:
     ]
     
     result = await continue_agent_run({"contents": contents, "called": []})
+    
+    # --- Confirmation Logic ---
+    # Check if the next action requires user confirmation before saving to DB
+    if result.get("next", {}).get("type") == "execute_script":
+        cmd_path = result["next"]["content"].get("cmd_path")
+        # If the command is not in our safe list, we change the type
+        # to ask for confirmation from the user on the frontend.
+        if cmd_path not in SAFE_COMMANDS:
+            result["next"]["type"] = "confirmation_required"
+    # --- End Confirmation Logic ---
+
     result["contents"] = list(map(lambda x: x.model_dump(), result["contents"]))
     
-    if (result["next"]["type"] != "text"):
+    # Only save to DB and return a session_id if a follow-up is expected
+    if result.get("next", {}).get("type") != "text":
         entry = await db.sessions.insert_one(dict(result))
         result["session"] = str(entry.inserted_id)
     return result
@@ -217,46 +232,66 @@ async def continue_agent_run(contents) -> dict:
 
 @router.post("/continue_session")
 async def continue_session(payload: UserResponse) -> dict:
+    print("The payload is: \n", payload)
     session_id = payload.session
     response = payload.response
     session = await db.sessions.find_one({"_id": ObjectId(session_id)})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    print(session["next"])
-    output = []
-    for k in session["contents"]:
-        print(k)
-        output.append(Content.model_validate(k))
+
+    output = [Content.model_validate(c) for c in session.get("contents", [])]
     function_response_part = None
-    if (session["next"]["type"] == "create_new_script"):
-        
-        d = await create_script(session["next"]["content"]["code"], session["next"]["content"]["name"], session["next"]["content"]["description"])
+    next_action = session.get("next", {})
+    action_type = next_action.get("type")
+
+    if action_type == "execute_script":
+        if response.lower() == "yes":
+            content = next_action.get("content", {})
+            cmd_path = content.get("cmd_path")
+            args = content.get("args", [])
+            execution_result = execute_script(cmd_path, args)
+            print("The execution result is: \n", execution_result)
+            function_response_part = Part.from_function_response(
+                name="execute_script",
+                response={"result": execution_result},
+            )
+            # Optionally add to a list of 'called' commands if needed
+            session["called"] = session.get("called", []) + [" ".join([cmd_path] + args)]
+        else:
+            # If user says no, we can just inform the model
+            function_response_part = Part.from_function_response(
+                name="execute_script",
+                response={"result": "User cancelled the action."},
+            )
+    elif action_type == "create_new_script":
+        content = next_action.get("content", {})
+        d = await create_script(content.get("code"), content.get("name"), content.get("description"))
         function_response_part = Part.from_function_response(
-            name=session["next"]["type"],
-            response={"result": f"Script successfully created at {d['path']}"},
+            name="create_new_script",
+            response={"result": f"Script successfully created at {d.get('path', 'N/A')}"},
         )
-        
-    elif (session["next"]["type"] == "execute_script"):
-        function_response_part = Part.from_function_response(
-            name=session["next"]['content']["cmd_path"],
-            response={"result": execute_script(session["next"]['content']["cmd_path"], session["next"]['content']["args"])["stdout"]},
-        )
-        session["called"].append(" ".join([session["next"]['content']["cmd_path"]] + session["next"]['content']["args"]))
-    
-    elif (session["next"]["type"] == "ask"):
+    elif action_type == "ask":
         function_response_part = Part.from_function_response(
             name="ask",
             response={"result": response},
         )
-    output.append(Content(role="user", parts=[function_response_part]))
-    await db.sessions.delete_one({"_id": session_id})
-    result = await continue_agent_run({"contents": output, "called": session["called"] })
+
+    # Only append if a function response was actually generated
+    if function_response_part:
+        output.append(Content(role="tool", parts=[function_response_part]))
     
-    result["contents"] = list(map(lambda x: x.model_dump(), result["contents"]))
+    # Clean up the old session
+    await db.sessions.delete_one({"_id": ObjectId(session_id)})
     
-    if (result["next"]["type"] != "text"):
+    # Continue the agent run with the updated context
+    result = await continue_agent_run({"contents": output, "called": session.get("called", []) })
+    
+    result["contents"] = [c.model_dump() for c in result.get("contents", [])]
+    
+    if result.get("next", {}).get("type") != "text":
         entry = await db.sessions.insert_one(dict(result))
         result["session"] = str(entry.inserted_id)
+        
     return result
 
 async def create_script(script_body: str, name: str, description: str) -> dict:

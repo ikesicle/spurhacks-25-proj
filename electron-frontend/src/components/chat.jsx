@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import HistoryTab from './HistoryTab';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faBook } from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faBook, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const Chat = ({ setWindow }) => {
     const [history, setHistory] = useState([]);
@@ -17,7 +17,7 @@ const Chat = ({ setWindow }) => {
     useEffect(scrollToBottom, [history]);
 
     const handleSendMessage = async () => {
-        if (!message.trim()) return;
+        if (!message.trim() || isThinking) return;
 
         const newMessage = { type: 'user', content: message };
         setHistory(prev => [...prev, newMessage]);
@@ -31,21 +31,87 @@ const Chat = ({ setWindow }) => {
                 body: JSON.stringify({ message })
             });
             const data = await response.json();
+            
+            let botResponse = { type: 'bot', content: "Sorry, I couldn't process that." };
 
-            let botResponse = "Sorry, I couldn't process that.";
-            if (data.function_called) {
-                botResponse = `Function Call: ${data.function_called}\nArgs: ${JSON.stringify(data.function_args, null, 2)}\nResult: ${JSON.stringify(data.function_result, null, 2)}`;
-            } else if (data.response) {
-                botResponse = data.response;
+            if (data.next && data.next.type === "confirmation_required") {
+                const { cmd_path, args } = data.next.content;
+                botResponse = {
+                    type: 'bot',
+                    content: `I am about to execute the following command:\n\n'${cmd_path} ${args.join(" ")}'\n\nPlease confirm if you'd like to proceed.`,
+                    requiresConfirmation: true,
+                    session: data.session
+                };
+            } else if (data.next && data.next.content && data.next.content.text) {
+                botResponse.content = data.next.content.text;
+            } else if (data.function_called) {
+                botResponse.content = `Function Call: ${data.function_called}\nArgs: ${JSON.stringify(data.function_args, null, 2)}\nResult: ${JSON.stringify(data.function_result, null, 2)}`;
             }
 
-            setHistory(prev => [...prev, { type: 'bot', content: botResponse }]);
+            setHistory(prev => [...prev, botResponse]);
         } catch (error) {
             console.error("Failed to send message:", error);
             setHistory(prev => [...prev, { type: 'bot', content: "An error occurred while connecting to the server." }]);
         } finally {
             setIsThinking(false);
         }
+    };
+
+    const handleConfirmation = async (session, confirmed) => {
+        // Find the confirmation message in history and mark it as resolved
+        setHistory(prev => prev.map(item => 
+            item.session === session ? { ...item, requiresConfirmation: false, confirmed: confirmed } : item
+        ));
+        
+        if (!confirmed) {
+            setHistory(prev => [...prev, { type: 'bot', content: "Action Cancelled." }]);
+            return;
+        }
+
+        setIsThinking(true);
+        console.log(session)
+        try {
+            const response = await fetch("http://localhost:8000/gemini/continue_session", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session: session, response: "Yes" })
+            });
+            const data = await response.json();
+            console.log(data)
+            
+            // Add the new response from the continued session
+            let botResponse = { type: 'bot', content: "Couldn't process the next step." };
+             if (data.next && data.next.content && data.next.content.text) {
+                botResponse.content = data.next.content.text;
+            } else if (data.function_called) {
+                botResponse.content = `Function Call: ${data.function_called}\nArgs: ${JSON.stringify(data.function_args, null, 2)}\nResult: ${JSON.stringify(data.function_result, null, 2)}`;
+            }
+            setHistory(prev => [...prev, botResponse]);
+
+        } catch (error) {
+            console.error("Failed to continue session:", error);
+            setHistory(prev => [...prev, { type: 'bot', content: "An error occurred during confirmation." }]);
+        } finally {
+            setIsThinking(false);
+        }
+    };
+
+    const ConfirmationButtons = ({ msg }) => {
+        if (!msg.requiresConfirmation) return null;
+        return (
+            <div className="flex justify-end gap-3 mt-3">
+                <button 
+                    className="flex items-center gap-2 py-2 px-4 font-semibold bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg shadow-md hover:shadow-lg"
+                    onClick={() => handleConfirmation(msg.session, false)}>
+                    <FontAwesomeIcon icon={faTimes} /> No
+                </button>
+                <button 
+                    className="flex items-center gap-2 py-2 px-4 font-semibold bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg shadow-md hover:shadow-lg"
+                    onClick={() => handleConfirmation(msg.session, true)}>
+                    <FontAwesomeIcon icon={faCheck} /> Yes
+                </button>
+            </div>
+        );
     };
 
     return (
@@ -56,6 +122,7 @@ const Chat = ({ setWindow }) => {
                         <div key={idx} className={`flex ${item.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-xl px-5 py-3 rounded-2xl shadow-md ${item.type === 'user' ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-300'}`}>
                                 <pre className="whitespace-pre-wrap font-sans">{item.content}</pre>
+                                <ConfirmationButtons msg={item} />
                             </div>
                         </div>
                     ))}
