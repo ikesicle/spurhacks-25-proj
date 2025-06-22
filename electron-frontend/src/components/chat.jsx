@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import HistoryTab from './HistoryTab';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPaperPlane, faBook } from '@fortawesome/free-solid-svg-icons';
 
 const Chat = ({ setWindow }) => {
     const [history, setHistory] = useState([]);
@@ -78,14 +80,16 @@ const Chat = ({ setWindow }) => {
                     <button
                         onClick={handleSendMessage}
                         disabled={isThinking}
-                        className="font-bold py-3 px-6 text-white rounded-lg shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:scale-100"
+                        className="font-bold py-3 px-6 text-white rounded-lg shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
                     >
+                        <FontAwesomeIcon icon={faPaperPlane} />
                         Send
                     </button>
                     <button
                         onClick={() => setWindow('library')}
-                        className="font-bold py-3 px-6 text-white rounded-lg shadow-lg bg-gray-600 hover:bg-gray-500 transform hover:scale-105 transition-all duration-200"
+                        className="font-bold py-3 px-6 text-white rounded-lg shadow-lg bg-gray-600 hover:bg-gray-500 transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
                     >
+                        <FontAwesomeIcon icon={faBook} />
                         Library
                     </button>
                 </div>

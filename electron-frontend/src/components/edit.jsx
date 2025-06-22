@@ -1,6 +1,8 @@
 import { data } from 'autoprefixer';
 import React, { useState, useEffect, useRef } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faSave, faTimes, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 
 const FormSection = ({ title, children }) => (
     <div className="mb-6">
@@ -68,7 +70,8 @@ const Edit = ({ setWindow, currentScript, updateScript }) => {
                                     const newParam = { name: '', type: '', description: '' };
                                     updateScript({ ...currentScript, parameters: [...(currentScript.parameters || []), newParam] });
                                 }}>
-                                + Add Parameter
+                                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                                Add Parameter
                             </button>
                         </div>
                         <div className="space-y-3">
@@ -113,7 +116,7 @@ const Edit = ({ setWindow, currentScript, updateScript }) => {
                                                 const updatedParams = currentScript.parameters.filter((_, i) => i !== idx);
                                                 updateScript({ ...currentScript, parameters: updatedParams });
                                             }}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                            <FontAwesomeIcon icon={faTrashAlt} />
                                         </button>
                                     </div>
                                 );
@@ -124,13 +127,14 @@ const Edit = ({ setWindow, currentScript, updateScript }) => {
                 <div className="flex justify-end items-center gap-4 pt-6 border-t border-gray-700">
                     <button
                         type="button"
-                        className={`${buttonClasses} bg-gray-600 hover:bg-gray-500`}
+                        className={`${buttonClasses} bg-gray-600 hover:bg-gray-500 flex items-center gap-2`}
                         onClick={() => setWindow('library')}>
+                        <FontAwesomeIcon icon={faTimes} />
                         Cancel
                     </button>
                     <button
                         type="button"
-                        className={`${buttonClasses} bg-gradient-to-r from-green-500 to-teal-500`}
+                        className={`${buttonClasses} bg-gradient-to-r from-green-500 to-teal-500 flex items-center gap-2`}
                         onClick={() => {
                             (async () => {
                                 await fetch("http://localhost:8000/scripts/save_script", {
@@ -141,6 +145,7 @@ const Edit = ({ setWindow, currentScript, updateScript }) => {
                                 setWindow('library');
                             })();
                         }}>
+                        <FontAwesomeIcon icon={faSave} />
                         Save Changes
                     </button>
                 </div>
