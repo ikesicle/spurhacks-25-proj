@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from scripts import router as scripts_router
+from crud import router as crud_router
 
 app = FastAPI()
-app.include_router(scripts_router)
+app.include_router(crud_router)
 
