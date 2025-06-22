@@ -14,13 +14,27 @@ async def get_scripts():
         script["_id"] = str(script["_id"])
     return scripts
 
+@router.get("/get_script")
+async def get_script(_id: str):
+    script = await db.scripts.find_one({"_id": ObjectId(_id)})
+    if not script:
+        raise HTTPException(status_code=404, detail="Script not found")
+    script["_id"] = str(script["_id"])
+    return script
+
 @router.post("/save_script")
 async def save_script(script: Script = Body(...)):
     script_data = script.model_dump()
 
-    existing_script = await db.scripts.find_one({"_id": ObjectId(script_data["_id"])})
+    existing_script = None
+    if "_id" in script_data:
+        existing_script = await db.scripts.find_one({"_id": ObjectId(script_data["_id"])})
+        if not existing_script:
+            raise HTTPException(status_code=404, detail="Script not found")
+        script_data["_id"] = str(script_data["_id"])
+
     if existing_script:
-        return await update_script(script)
+        return await update_script(script_data)
     else:
         return await create_script(script)
 
@@ -28,23 +42,14 @@ async def create_script(script: Script = Body(...)):
     script_data = script.model_dump()
     script_data["created_at"] = datetime.now()
     script = await db.scripts.insert_one(script_data)
-    script_data["_id"] = str(script.inserted_id)
-    script_data["created_at"] = str(script_data["created_at"])
-    script_data["updated_at"] = str(script_data["updated_at"])
-    return script_data
+    return await get_script(str(script.inserted_id))
 
-async def update_script(script: Script = Body(...)):
-    script_data = script.model_dump()
-    script_data.pop("_id")
+async def update_script(script_data: dict = Body(...)):
     _id = script_data.pop("_id")
-    script = await db.scripts.update_one({"_id": _id}, {"$set": script_data})
-    script_data["_id"] = _id
-    script_data["created_at"] = str(script_data["created_at"])
-    script_data["updated_at"] = str(script_data["updated_at"])
-    return script_data
+    script_data["updated_at"] = datetime.now()
+    script = await db.scripts.update_one({"_id": ObjectId(_id)}, {"$set": script_data})
+    return await get_script(_id)
 
 @router.delete("/delete_script")
-async def delete_script(_id: str)
-    if _id in script_data:
-        
+async def delete_script(_id: str):
     pass
