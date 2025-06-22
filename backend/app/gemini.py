@@ -169,7 +169,6 @@ async def continue_agent_run(contents) -> dict:
             ret["should_continue"] = True
             # Return the function call data
     ret["response"] = response.text
-
     contents["next"] = ret
 
     return contents
@@ -199,4 +198,5 @@ async def continue_session(payload: SendMessagePayload) -> dict:
         entry = await db.sessions.insert_one(dict(result))
         result["session"] = str(entry.inserted_id)
     return result
-    
+
+

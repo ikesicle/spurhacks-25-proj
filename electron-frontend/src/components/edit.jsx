@@ -131,12 +131,16 @@ const Edit = ({ setWindow, currentScript, updateScript }) => {
                             headers: {
                                 'Content-Type': 'application/json'
                             },
+<<<<<<< HEAD
                             body: JSON.stringify({...{
                                 name: "",
                                 description: "",
                                 path: "",
                                 parameters: []
                             }, ...currentScript})
+=======
+                            body: JSON.stringify(currentScript)
+>>>>>>> bc6a074 (rebase)
                         })
                     })()
                 }}>
