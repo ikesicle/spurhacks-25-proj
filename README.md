@@ -13,6 +13,11 @@
   <img alt="Tailwind" src="https://img.shields.io/badge/ui-Tailwind_CSS-38B2AC?logo=tailwindcss">
 </div>
 
+<h1 align="center">
+  <b>Spellbook</b> <br>
+  <span style="font-size:1.2em;">Your AI-Powered Script Library & Automation Hub</span>
+</h1>
+
 ---
 
 ## ✨ Overview
