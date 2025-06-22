@@ -5,6 +5,8 @@ Thumbs.db
 # backend
 __pycache__/**/*
 __pycache__/*
+backend/test_scripts
+
 lib/
 .env*
 .env
