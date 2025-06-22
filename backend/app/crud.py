@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException 
 from database import get_database
 from datetime import datetime
-from models import Script
+from models import Script, RunScriptResponse
 from bson import ObjectId
 
 router = APIRouter(prefix="/scripts", tags=["scripts"])
 db = get_database()
+
+class RunScriptResponse(BaseModel):
+    stdout: str
+    stderr: str
+    return_code: int
 
 @router.get("/get_scripts")
 async def get_scripts():
@@ -63,3 +68,46 @@ async def delete_script(_id: str):
     else:
         await db.scripts.delete_one({"_id": obj_id})
     return {"message": "Script deleted successfully"}
+
+@router.post("/run/{identifier}")
+async def run_script(identifier: str):
+    """
+    Finds a Python script by its unique name or ID and executes it.
+    
+    This endpoint does not take any arguments for the script itself.
+    """
+    query = {}
+    try:
+        query["_id"] = ObjectId(identifier)
+    except Exception:
+        query["name"] = identifier
+    
+    script_doc = await db.scripts.find_one(query)
+    if not script_doc:
+        raise HTTPException(status_code=404, detail="Script not found")
+    
+    script_path = script_doc.get("path")
+    if not script_path:
+        raise HTTPException(status_code=400, detail="The script document is missing a 'path' field.")
+    
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "python", script_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await proc.communicate()
+
+    except FileNotFoundError:
+        # This error occurs if the script_path does not point to a real file
+        raise HTTPException(status_code=500, detail=f"Script file not found at path: {script_path}")
+    except Exception as e:
+        # Catch any other errors during subprocess execution
+        raise HTTPException(status_code=500, detail=f"Failed to execute script: {e}")
+    
+        # Return the captured output and return code in a simple JSON object
+    return {
+        "stdout": stdout.decode(),
+        "stderr": stderr.decode(),
+        "return_code": proc.returncode
+    }
