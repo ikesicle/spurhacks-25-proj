@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ScriptView from './scriptview';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faComment } from '@fortawesome/free-solid-svg-icons';
 
 const Library = ({ setWindow, setCurrentScript, allScripts, setAllScripts }) => {
     const [counter, setCounter] = useState(0);
@@ -22,8 +24,9 @@ const Library = ({ setWindow, setCurrentScript, allScripts, setAllScripts }) => 
                         Script Library
                     </h1>
                     <div className="flex items-center gap-4">
-                        <label htmlFor='file-select' className="cursor-pointer font-bold py-2 px-5 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                            Add From Disk
+                        <label htmlFor='file-select' className="flex items-center gap-2 cursor-pointer font-bold py-2 px-5 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                            <FontAwesomeIcon icon={faPlus} />
+                            From Disk
                         </label>
                         <input
                             type='file'
@@ -37,9 +40,10 @@ const Library = ({ setWindow, setCurrentScript, allScripts, setAllScripts }) => 
                                 setWindow('edit')
                             }} />
                         <button
-                            className="font-bold py-2 px-5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                            className="flex items-center gap-2 font-bold py-2 px-5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                             onClick={() => setWindow('chat')}>
-                            Back to Chat
+                            <FontAwesomeIcon icon={faComment} />
+                            Back
                         </button>
                     </div>
                 </div>

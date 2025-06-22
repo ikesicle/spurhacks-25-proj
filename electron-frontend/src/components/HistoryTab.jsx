@@ -1,4 +1,6 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEraser } from '@fortawesome/free-solid-svg-icons';
 
 const HistoryTab = ({ show, clear, history }) => {
   if (!show) return null;
@@ -6,7 +8,8 @@ const HistoryTab = ({ show, clear, history }) => {
     <div className="h-full w-full bg-gray-800/30 backdrop-blur-sm rounded-xl shadow-lg p-6 flex flex-col gap-4 border border-gray-700">
       <div className="font-semibold text-lg flex justify-between items-center text-gray-100">
         <span>History</span>
-        <button onClick={clear} className="ml-4 text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200">
+        <button onClick={clear} className="flex items-center gap-2 ml-4 text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200">
+          <FontAwesomeIcon icon={faEraser} />
           Clear
         </button>
       </div>
