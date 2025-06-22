@@ -36,6 +36,7 @@ def execute_script(script_path: str, args: list[str] | None = None) -> dict:
     print(f"Executing: {script_path} with args: {args}")
     try:
         command = [script_path] + args
+        if (script_path.endswith('.py')): command = ['python'] + command
         result = subprocess.run(
             command, capture_output=True, text=True
         )
@@ -63,6 +64,25 @@ get_script_names_function = FunctionDeclaration(
     parameters={"type": "object", "properties": {}}
 )
 
+create_new_script_function = FunctionDeclaration(
+    name="create_new_script",
+    description="Generate a new Python 3 script from scratch to perform a certain action. Should be used if the user requests functionality which is not provided with existing scripts or Bash commands. If successful, you can follow this tool up with a call to `get_script_details` to check where the script got saved to, then call the script using `execute_script`. Scripts generated this way cannot take arguments.",
+    parameters={"type": "object", "properties": {
+            "name": {
+                "type": "string",
+                "description": "What the new script will be called."
+            },
+            "description": {
+                "type": "string",
+                "description": "A short blurb describing what the script does"
+            },
+            "code": {
+                "type": "string",
+                "description": "The code to go into the script."
+            }
+        }}
+)
+
 get_script_details_function = FunctionDeclaration(
     name="get_script_details",
     description="Gets the detailed information for a specific script by its name, including its file_path, description, and parameters. Use this to find out how to execute a script.",
@@ -78,13 +98,29 @@ get_script_details_function = FunctionDeclaration(
     }
 )
 
-execute_script_function = FunctionDeclaration(
-    name="execute_script",
-    description="Exectutes a script or command in the terminal with args. Execution of sensitive scripts may be subject to user approval first. If you do not know which script to execute then use the `get_script_names` tool to get a list of scripts from the database.",
+ask_function = FunctionDeclaration(
+    name="ask",
+    description="Asks the user a question. Use this if some things about your task are unclear, such as directories or files to execute scripts in/on. Don't use it too often.",
     parameters={
         "type": "object",
         "properties": {
-            "script_path": {
+            "prompt": {
+                "type": "string",
+                "description": "The question to ask the user."
+            }
+        },
+        "required": ["prompt"]
+    }
+)
+
+
+execute_script_function = FunctionDeclaration(
+    name="execute_script",
+    description="Exectutes a script or bash command in the terminal with args. Execution of sensitive scripts or commands may be subject to user approval first. If you do not know which script to execute then use the `get_script_names` tool to get a list of scripts from the database.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "cmd_path": {
                 "type": "string",
                 "description": "The command or path to the script to execute (e.g., 'ls' or './scripts/list_files.sh')."
             },
@@ -100,7 +136,7 @@ execute_script_function = FunctionDeclaration(
     }
 )
 
-tools = [Tool(function_declarations=[execute_script_function, get_script_names_function, get_script_details_function])]
+tools = [Tool(function_declarations=[execute_script_function, get_script_names_function, get_script_details_function, create_new_script_function, ask_function])]
 config = GenerateContentConfig(tools=tools)
 
 @router.post("/send_message")
@@ -113,10 +149,10 @@ async def send_message(payload: SendMessagePayload) -> dict:
         )
     ]
     
-    result = await continue_agent_run({"contents": contents})
+    result = await continue_agent_run({"contents": contents, "called": []})
     result["contents"] = list(map(lambda x: x.model_dump(), result["contents"]))
     
-    if (result["next"]["should_continue"]):
+    if (result["next"]["type"] != "text"):
         entry = await db.sessions.insert_one(dict(result))
         result["session"] = str(entry.inserted_id)
     return result
@@ -129,9 +165,8 @@ async def continue_agent_run(contents) -> dict:
         config=config
     )
     ret = {
-        "should_continue": False,
-        "function_called": "",
-        "response": ""
+        "type": "text",
+        "content": {}
     }
     # The response can contain either a function call or text. 
     # We must check for the function call first, because accessing .text 
@@ -160,15 +195,21 @@ async def continue_agent_run(contents) -> dict:
             contents["contents"].append(Content(role="user", parts=[function_response_part])) # Append the function response
             return await continue_agent_run(contents)
         elif function_call.name == "execute_script":
+            ret["type"] = "execute_script"
             script_path = function_call.args["script_path"]
             # args is optional, so we use .get() to avoid errors if it's not provided
             args = list(function_call.args.get("args", []))
-            ret["function_called"] = function_call.name
             # Reconstruct args from sanitized variables to avoid JSON serialization errors.
-            ret["function_args"] = {"script_path": script_path, "args": args}
-            ret["should_continue"] = True
+            ret["content"] = {"script_path": script_path, "args": args}
             # Return the function call data
-    ret["response"] = response.text
+        elif function_call.name == "create_new_script":
+            ret["type"] = "create_new_script"
+            ret["content"] = function_call.args
+        elif function_call.name == "ask":
+            ret["type"] = "ask"
+            ret["content"] = function_call.args
+    else:
+        ret["content"]["text"] = response.text
 
     contents["next"] = ret
 
@@ -183,20 +224,68 @@ async def continue_session(payload: SendMessagePayload) -> dict:
     print(session["next"])
     output = []
     for k in session["contents"]:
+        print(k)
         output.append(Content.model_validate(k))
+    function_response_part = None
+    if (session["next"]["type"] == "create_new_script"):
+        
+        d = await create_script(session["next"]["content"]["code"], session["next"]["content"]["name"], session["next"]["content"]["description"])
+        function_response_part = Part.from_function_response(
+            name=session["next"]["type"],
+            response={"result": f"Script successfully created at {d['path']}"},
+        )
+        
+    elif (session["next"]["type"] == "execute_script"):
+        function_response_part = Part.from_function_response(
+            name=session["next"]['content']["script_path"],
+            response={"result": execute_script(session["next"]['content']["script_path"], session["next"]['content']["args"])["stdout"]},
+        )
+        session["called"].append(" ".join([session["next"]['content']["script_path"]] + session["next"]['content']["args"]))
     
-    function_response_part = Part.from_function_response(
-        name=session["next"]["function_called"],
-        response={"result": execute_script(session["next"]["function_args"]["script_path"], session["next"]["function_args"]["args"])},
-    )
-    output.append(function_response_part)
+    elif (session["next"]["type"] == "execute_script"):
+        function_response_part = Part.from_function_response(
+            name="ask",
+            response={"result": session["next"]["content"]["prompt"]},
+        )
+    output.append(Content(role="user", parts=[function_response_part]))
     await db.sessions.delete_one({"_id": session_id})
-    result = await continue_agent_run({"contents": output})
+    result = await continue_agent_run({"contents": output, "called": session["called"] })
     
     result["contents"] = list(map(lambda x: x.model_dump(), result["contents"]))
     
-    if (result["next"]["should_continue"]):
+    if (result["next"]["type"] != "text"):
         entry = await db.sessions.insert_one(dict(result))
         result["session"] = str(entry.inserted_id)
     return result
+
+async def create_script(script_body: str, name: str, description: str) -> dict:
+    """
+    Creates a new script file in the local_scripts directory and adds its info to MongoDB.
+    Returns the inserted document or error info.
+    """
+    # Ensure local_scripts directory exists
+    scripts_dir = os.path.join(os.path.dirname(__file__), 'local_scripts')
+    os.makedirs(scripts_dir, exist_ok=True)
     
+    # Create the script file
+    filename = f"{name}.py"
+    file_path = os.path.join(scripts_dir, filename)
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(script_body)
+    except Exception as e:
+        return {"error": f"Failed to write script file: {str(e)}"}
+
+    # Prepare document for MongoDB
+    script_doc = {
+        "name": name,
+        "description": description,
+        "path": file_path,
+        "parameters": []
+    }
+    try:
+        result = await db.scripts.insert_one(script_doc)
+        script_doc["_id"] = str(result.inserted_id)
+        return script_doc
+    except Exception as e:
+        return {"error": f"Failed to insert into MongoDB: {str(e)}"}
