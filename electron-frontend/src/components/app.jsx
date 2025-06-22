@@ -7,14 +7,15 @@ import Edit from './edit'; // Placeholder for edit component
 const App = () => {
   const [window, setWindow] = React.useState('chat');
   const [currentScript, setCurrentScript] = React.useState(null);
+  const [allScripts, setAllScripts] = React.useState([]);
   return(
     <div>
       {(() => {
         switch (window) {
           case 'chat':
-            return <Chat setWindow={setWindow} />;
+            return <Chat setWindow={setWindow} allScripts={allScripts} />;
           case 'library':
-            return <Library setWindow={setWindow} setCurrentScript={setCurrentScript} />; // Placeholder for library component
+            return <Library setWindow={setWindow} setCurrentScript={setCurrentScript} allScripts={allScripts} setAllScripts={setAllScripts}/>; // Placeholder for library component
           case 'edit':
             return <Edit setWindow={setWindow} currentScript={currentScript} updateScript={setCurrentScript}/>;
           default:

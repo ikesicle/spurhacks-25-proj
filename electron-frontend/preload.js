@@ -20,5 +20,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     window.addEventListener('dragover', (event) => {
       event.preventDefault();
     });
+  },
+  getFilePath: (file) => {
+    return webUtils.getPathForFile(file)
   }
 });

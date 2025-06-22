@@ -1,5 +1,5 @@
-import google.generativeai as genai
-from google.generativeai.types import Tool, FunctionDeclaration
+from google import genai
+from google.genai.types import Tool, FunctionDeclaration, Content, Part,GenerateContentConfig
 from models import SendMessagePayload
 from fastapi import APIRouter
 import os
@@ -9,7 +9,7 @@ import subprocess
 from database import get_database
 
 # Set up API key
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 router = APIRouter(prefix="/gemini", tags=["gemini"])
 db = get_database()
@@ -79,7 +79,7 @@ get_script_details_function = FunctionDeclaration(
 
 execute_script_function = FunctionDeclaration(
     name="execute_script",
-    description="Exectutes a script in the terminal with args. If its a regular bash command then just execute it. If you do not know which script to execute then use the get_script_names function to get a list of scripts from the database.",
+    description="Exectutes a script or command in the terminal with args. Execution of sensitive scripts may be subject to user approval first. If you do not know which script to execute then use the `get_script_names` tool to get a list of scripts from the database.",
     parameters={
         "type": "object",
         "properties": {
@@ -89,7 +89,7 @@ execute_script_function = FunctionDeclaration(
             },
             "args": {
                 "type": "array",
-                "description": "An optional list of string arguments to pass to the command/script.",
+                "description": "An optional list of arguments to pass to the command/script. If you're calling a script, be sure to use `get_script_details` to check what each argument does.",
                 "items": {
                     "type": "string"
                 }
@@ -100,43 +100,75 @@ execute_script_function = FunctionDeclaration(
 )
 
 tools = [Tool(function_declarations=[execute_script_function, get_script_names_function, get_script_details_function])]
-# Load the model
-model = genai.GenerativeModel(model_name="gemini-2.5-flash", tools=tools)
+config = GenerateContentConfig(tools=tools)
 
 @router.post("/send_message")
 async def send_message(payload: SendMessagePayload) -> dict:
     message = payload.message
     print("The message is: \n", message)
+    contents = [
+        Content(
+            role="user", parts=[Part(text=message)]
+        )
+    ]
     
-    response = model.generate_content(message)
-    ret = {}
+    result = await continue_agent_run({"contents": contents})
 
+    contents = result["contents"]
+    if (result["next"]):
+        entry = await db.sessions.insert_one(contents)
+        result["session"] = str(entry.inserted_id)
+    return result
+
+
+async def continue_agent_run(contents) -> dict:
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=contents["contents"],
+        config=config
+    )
+    ret = {}
     # The response can contain either a function call or text. 
     # We must check for the function call first, because accessing .text 
     # on a response with a function call will raise an error.
     part = response.candidates[0].content.parts[0]
+    print(part)
 
     if hasattr(part, "function_call") and part.function_call:
         function_call = part.function_call
-
+        
         if function_call.name == "get_script_names":
             result = await get_script_names()
-            return await send_message(SendMessagePayload(message=f"{payload.message}\nThe script names are: {result}"))
+            function_response_part = Part.from_function_response(
+                name=function_call.name,
+                response={"result": f"The script names are: {result}"},
+            )
+            contents["contents"].append(response.candidates[0].content)
+            contents["contents"].append(Content(role="user", parts=[function_response_part])) # Append the function response
+            return await continue_agent_run(contents)
         elif function_call.name == "get_script_details":
             result = await get_script_details(function_call.args["name"])
-            return await send_message(SendMessagePayload(message=f"{payload.message}\nThe relevant script details are: {result}"))
+            function_response_part = Part.from_function_response(
+                name=function_call.name,
+                response={"result": f"Details of the script:\n {result}"},
+            )
+            contents["contents"].append(response.candidates[0].content)
+            contents["contents"].append(Content(role="user", parts=[function_response_part])) # Append the function response
+            return await continue_agent_run(contents)
         elif function_call.name == "execute_script":
             script_path = function_call.args["script_path"]
             # args is optional, so we use .get() to avoid errors if it's not provided
             args = list(function_call.args.get("args", []))
-            result = execute_script(script_path=script_path, args=args)
             ret["function_called"] = function_call.name
             # Reconstruct args from sanitized variables to avoid JSON serialization errors.
             ret["function_args"] = {"script_path": script_path, "args": args}
-            ret["function_result"] = result
-    else:
-        # If there is no function call, it's safe to access the .text property
-        ret["response"] = response.text
+            # Return the function call data
+    # ret["response"] = response.text
 
-    print("The return is: \n", json.dumps(ret, indent=4))
-    return ret
+    contents["next"] = ret
+    
+    return contents
+
+@router.post("/continue_session")
+async def continue_session(payload: SendMessagePayload) -> dict:
+    message = payload.message

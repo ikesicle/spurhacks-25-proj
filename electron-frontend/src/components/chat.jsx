@@ -1,27 +1,44 @@
 import React, { useState } from 'react';
 import HistoryTab from './HistoryTab';
 
-const Chat = ({ setWindow }) => {
+const Chat = ({ setWindow, allScripts }) => {
   const [input, setInput] = useState('');
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
 
   const handleInputChange = (e) => {
-    setInput(e.target.value);
+    const value = e.target.value;
+    setInput(value);
+
+    // Weak search when input starts with "/"
+    if (value.startsWith('/')) {
+      const query = value.slice(1).toLowerCase();
+      if (query.length > 0) {
+        const results = allScripts.filter(script =>
+          script.name.toLowerCase().includes(query)
+        );
+        setSearchResults(results);
+      } else {
+        setSearchResults([]);
+      }
+    } else {
+      setSearchResults([]);
+    }
   };
 
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
     setLoading(true);
-    // Simulate AI response
     setTimeout(() => {
       setResponse((prev) => prev + '\n' + input);
       setLoading(false);
     }, 800);
     setInput('');
+    setSearchResults([]);
   };
 
   return (
@@ -40,7 +57,7 @@ const Chat = ({ setWindow }) => {
                     onClick={(e) => setWindow('library')}>
                     LIB
                 </button>
-                <form onSubmit={handleSend} className="flex-1 h-full">
+                <form onSubmit={handleSend} className="flex-1 h-full relative">
                     <input
                         type="text"
                         value={input}
@@ -49,6 +66,16 @@ const Chat = ({ setWindow }) => {
                         className="w-full pl-5 h-full border border-gray-300 text-lg outline-none shadow-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-200"
                         disabled={loading}
                     />
+                    {/* Search results dropdown */}
+                    {searchResults.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full bg-white border border-gray-200 shadow-lg z-20 max-h-48 overflow-y-auto">
+                        {searchResults.map((script, idx) => (
+                          <div key={idx} className="px-4 py-2 hover:bg-blue-100 cursor-pointer">
+                            {script.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                 </form>
             </div>
             <div

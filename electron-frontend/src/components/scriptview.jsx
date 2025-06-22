@@ -40,13 +40,15 @@ const ScriptView = ({visible, scriptData, activateEdit, updateScript}) => {
                     <button
                         className='h-10 w-20 bg-red-500 text-white rounded hover:bg-red-600 transition mr-2'
                         onClick={() => {
-                            fetch(`http://localhost:8000/scripts/delete_script?_id=${scriptData._id}`,
-                                {
-                                    method: "DELETE"
-                                }
-                            )
-                            console.log("Deleted.")
-                            updateScript()
+                            (async () => {
+                                await fetch(`http://localhost:8000/scripts/delete_script?_id=${scriptData._id}`,
+                                    {
+                                        method: "DELETE"
+                                    }
+                                )
+                                console.log("Deleted.")
+                                updateScript()
+                            })()
                         }}>
                         Delete
                     </button>
