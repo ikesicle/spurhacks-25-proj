@@ -31,6 +31,7 @@ const Chat = ({ setWindow }) => {
                 body: JSON.stringify({ message })
             });
             const data = await response.json();
+            console.log(data);
             
             let botResponse = { type: 'bot', content: "Sorry, I couldn't process that." };
 
@@ -46,6 +47,19 @@ const Chat = ({ setWindow }) => {
                 botResponse.content = data.next.content.text;
             } else if (data.function_called) {
                 botResponse.content = `Function Call: ${data.function_called}\nArgs: ${JSON.stringify(data.function_args, null, 2)}\nResult: ${JSON.stringify(data.function_result, null, 2)}`;
+            } else if (data.next?.content?.return) {
+                const { returncode, stdout, stderr } = data.next.content.return;
+                let resultText = `Execution Finished with Exit Code: ${returncode}`;
+                if (stdout) {
+                    resultText += `\n\nSTDOUT:\n${stdout}`;
+                }
+                if (stderr) {
+                    resultText += `\n\nSTDERR:\n${stderr}`;
+                }
+                if (!stdout && !stderr) {
+                    resultText += `\n(No output to STDOUT or STDERR)`;
+                }
+                botResponse.content = resultText;
             }
 
             setHistory(prev => [...prev, botResponse]);
