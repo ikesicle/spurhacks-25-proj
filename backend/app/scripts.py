@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException 
 from database import get_database
 from datetime import datetime
 from models import Script
@@ -63,3 +63,23 @@ async def delete_script(_id: str):
     else:
         await db.scripts.delete_one({"_id": obj_id})
     return {"message": "Script deleted successfully"}
+
+@router.get("/get-script-details/{identifier}")
+async def get_script_details(identifier: str):
+    query = {}
+    try:
+        query["_id"] = ObjectId(identifier)
+    except Exception:
+        query["name"] = identifier
+
+    script_doc = await db.scripts.find_one(query)
+
+    if not script_doc:
+        raise HTTPException(status_code=404, detail=f"Script '{identifier}' not found.")
+
+    # Important: Convert the ObjectId to a string for the JSON response
+    script_doc["_id"] = str(script_doc["_id"])
+
+    # Return the full script document so the client knows what to run
+    return script_doc
+

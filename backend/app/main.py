@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
-from crud import router as crud_router
+from scripts import router as script_router
+from gemini import router as gemini_router
 
 app = FastAPI()
-app.include_router(crud_router)
-
+app.include_router(script_router)
+app.include_router(gemini_router)
