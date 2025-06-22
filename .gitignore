@@ -12,3 +12,4 @@ lib/
 .env
 .venv/
 .venv/*
+node_modules/
