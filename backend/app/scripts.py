@@ -145,7 +145,7 @@ async def execute_script_as_tool(script_id: str):
             raise HTTPException(status_code=400, detail=f"Unsupported script type: Path must end in .py or .sh. Path was: {server_script_path}")
 
         try:
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=10)
         except asyncio.TimeoutError:
             proc.kill()  # Kill the runaway process
             await proc.wait()
