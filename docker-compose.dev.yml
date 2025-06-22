@@ -16,21 +16,6 @@ services:
     networks:
       - app-network
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-
-  frontend-dev:
-    image: node:18-alpine
-    working_dir: /app
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules  # Prevent overwriting node_modules
-    networks:
-      - app-network
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
-    environment:
-      - VITE_API_URL=http://backend:8000
-
   mongo:
     image: mongo:latest
     ports:
