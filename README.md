@@ -3,6 +3,11 @@
   <span style="font-size:1.2em;">Your AI-Powered Script Library & Automation Hub</span>
 </h1>
 
+<!-- Banner -->
+<p align="center">
+  <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80" alt="Project Banner" width="80%" />
+</p>
+
 <p align="center">
   <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80" alt="SpurHacks Banner" width="80%" />
 </p>
