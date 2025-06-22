@@ -1,16 +1,11 @@
 from fastapi import APIRouter, Body, Depends, HTTPException 
 from database import get_database
 from datetime import datetime
-from models import Script, RunScriptResponse
+from models import Script
 from bson import ObjectId
 
 router = APIRouter(prefix="/scripts", tags=["scripts"])
 db = get_database()
-
-class RunScriptResponse(BaseModel):
-    stdout: str
-    stderr: str
-    return_code: int
 
 @router.get("/get_scripts")
 async def get_scripts():
