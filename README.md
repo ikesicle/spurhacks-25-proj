@@ -1,5 +1,3 @@
-# SpurHacks 2025 Project
-
 <h1 align="center">
   <b>Spellbook</b> <br>
   <span style="font-size:1.2em;">Your AI-Powered Script Library & Automation Hub</span>
