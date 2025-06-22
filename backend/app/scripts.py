@@ -53,5 +53,6 @@ async def delete_script(_id: str):
     script = await db.scripts.find_one({"_id": obj_id})
     if not script:
         raise HTTPException(status_code=404, detail="Script not found")
-    await db.scripts.delete_one({"_id": obj_id})
+    else:
+        await db.scripts.delete_one({"_id": obj_id})
     return {"message": "Script deleted successfully"}
