@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import Chat from './chat';
 import Library from './library'; // Placeholder for library component
 import Edit from './edit'; // Placeholder for edit component
+import '../index.css'; // Import the new CSS file
 
 const App = () => {
   const [window, setWindow] = React.useState('chat');
