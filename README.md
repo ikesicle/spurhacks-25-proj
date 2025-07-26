@@ -19,14 +19,14 @@
 
 ---
 
-## ✨ Overview
+## Overview
 
 **Spellbook** is a powerful, cross-platform desktop application for clustering, automating, and managing all your utility scripts—supercharged with AI.  
 Easily organize and execute a variety of scripts in seamless clusters, automate complex workflows with a single click, and use natural language to create new automations with Google Gemini.
 
 ---
 
-## 💡 Why Spellbook?
+## Why Spellbook?
 
 - **Cluster scripts with ease:** Select, group, and run multiple scripts in a sequence or batch. No more manual copy-paste or script juggling—Spellbook lets you automate entire workflows using your existing utilities.
 - **AI-driven automation:** Use natural language to describe what you want to automate, and let Gemini suggest, combine, or even generate scripts for you.
@@ -34,7 +34,7 @@ Easily organize and execute a variety of scripts in seamless clusters, automate 
 
 ---
 
-## 🏗️ Architecture & Stack
+## 🏗Architecture & Stack
 
 | Layer        | Main Tech            | Purpose                                          |
 |--------------|---------------------|--------------------------------------------------|
@@ -47,20 +47,20 @@ Easily organize and execute a variety of scripts in seamless clusters, automate 
 
 ---
 
-## 🚀 Features
+## Features
 
-- 📚 **Script Library:** Organize, tag, and search your scripts in one place  
-- 🤖 **AI-Powered Chat:** Generate, cluster, and automate scripts using natural language  
-- 🗃️ **Script Clustering:** Select and run batches or sequences of scripts with a single click  
-- 🖥️ **Desktop Native:** Electron-powered, cross-platform app  
-- 🏃 **One-Click Execution:** Run scripts with custom parameters and drag-n-drop files  
-- 🧠 **Agentic Automations:** Let Gemini intelligently combine and automate your scripts  
-- ⚡ **Hot Reload:** Rapid development via Docker Compose  
-- 🔐 **Secure:** Environment-based secrets, safe script handling
+- **Script Library:** Organize, tag, and search your scripts in one place  
+- **AI-Powered Chat:** Generate, cluster, and automate scripts using natural language  
+- **Script Clustering:** Select and run batches or sequences of scripts with a single click  
+- **Desktop Native:** Electron-powered, cross-platform app  
+- **One-Click Execution:** Run scripts with custom parameters and drag-n-drop files  
+- **Agentic Automations:** Let Gemini intelligently combine and automate your scripts  
+- **Hot Reload:** Rapid development via Docker Compose  
+- **Secure:** Environment-based secrets, safe script handling
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 spurhacks-25-proj/
@@ -84,7 +84,7 @@ spurhacks-25-proj/
 
 ---
 
-## ⚡ Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -116,7 +116,7 @@ docker-compose up --build
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 | Variable           | Location           | Purpose                       |
 |--------------------|-------------------|-------------------------------|
@@ -125,7 +125,7 @@ docker-compose up --build
 
 ---
 
-## 🛠️ Useful Docker Commands
+## 🛠Useful Docker Commands
 
 ```bash
 docker-compose down             # Stop all services
@@ -138,7 +138,7 @@ docker-compose exec frontend sh   # Shell into frontend container
 
 ---
 
-## 🐞 Troubleshooting
+## Troubleshooting
 
 - **Port conflicts**: Ensure ports 80, 8000, 5173, 27017 are free.
 - **CORS issues**: Adjust allowed origins in `backend/app/main.py` if needed.
@@ -147,8 +147,7 @@ docker-compose exec frontend sh   # Shell into frontend container
 
 ---
 
-## 🙇 Acknowledgements
+## Acknowledgements
 
-- [SpurHacks 2025](https://spurhacks.com/)
 - Google Gemini
 - FastAPI, React, Electron, Tailwind, MongoDB, Docker
